@@ -1,0 +1,174 @@
+.rayrun-widget {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 400px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rayrun-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.rayrun-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #24292e;
+}
+
+.rayrun-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rayrun-status-stopped {
+  background: #fafbfc;
+  color: #586069;
+  border: 1px solid #e1e4e8;
+}
+
+.rayrun-status-starting {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.rayrun-status-running {
+  background: #d4edda;
+  color: #155724;
+}
+
+.rayrun-status-stopping {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.rayrun-status-error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.rayrun-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rayrun-controls label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #586069;
+}
+
+.rayrun-select,
+.rayrun-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fafbfc;
+  color: #24292e;
+}
+
+.rayrun-select:focus,
+.rayrun-input:focus {
+  outline: none;
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+}
+
+.rayrun-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rayrun-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rayrun-button-start {
+  background: #28a745;
+  color: white;
+}
+
+.rayrun-button-start:hover:not(:disabled) {
+  background: #218838;
+}
+
+.rayrun-button-stop {
+  background: #dc3545;
+  color: white;
+}
+
+.rayrun-button-stop:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.rayrun-info {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.rayrun-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.rayrun-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.rayrun-label {
+  font-weight: 600;
+  color: #586069;
+  min-width: 100px;
+}
+
+.rayrun-info-row code {
+  background: #e1e4e8;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+}
+
+.rayrun-info-row a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.rayrun-info-row a:hover {
+  text-decoration: underline;
+}
+
+.rayrun-error {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+  color: #721c24;
+  font-size: 13px;
+}
