@@ -27,8 +27,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "traitlets>=5.0.0",
     "ray[client]==2.54.0",
-    "packaging>=26.0",
-    "setuptools>=82.0.0",
 ]
 
 [project.urls]
