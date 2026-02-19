@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 authors = [
     {name = "rambip"}
 ]
-keywords = ["jupyter", "widget", "gpu", "ray", "runpod", "distributed-computing"]
+keywords = ["jupyter", "widget", "gpu", "ray", "runpod", "marimo", "distributed-computing"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -23,10 +23,12 @@ classifiers = [
 ]
 dependencies = [
     "anywidget>=0.9.0",
-    "ray[default]>=2.9.0",
-    "requests>=2.31.0",
+    "aiohttp>=3.9.0",
     "python-dotenv>=1.0.0",
     "traitlets>=5.0.0",
+    "ray[client]==2.54.0",
+    "packaging>=26.0",
+    "setuptools>=82.0.0",
 ]
 
 [project.urls]
@@ -37,8 +39,6 @@ Issues = "https://github.com/rambip/rayrun/issues"
 [dependency-groups]
 dev = [
     "marimo>=0.19.11",
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
 ]
 
