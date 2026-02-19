@@ -1,201 +1,167 @@
-export function render({ model, el }) {
-  // Get current state
-  let status = model.get("status");
-  let podId = model.get("pod_id");
-  let ipAddress = model.get("ip_address");
-  let rayUrl = model.get("ray_url");
-  let dashboardUrl = model.get("dashboard_url");
-  let elapsedSeconds = model.get("elapsed_seconds");
-  let errorMessage = model.get("error_message");
-  let selectedGpu = model.get("selected_gpu");
-  let idleTimeout = model.get("idle_timeout_minutes");
+import { render as uRender, html } from "https://esm.run/uhtml";
 
-  // Create container
-  const container = document.createElement("div");
-  container.className = "rayrun-widget";
-
-  // Status header
-  const header = document.createElement("div");
-  header.className = "rayrun-header";
-  
-  const title = document.createElement("h3");
-  title.textContent = "RayRun Compute";
-  header.appendChild(title);
-  
-  const statusBadge = document.createElement("span");
-  statusBadge.className = `rayrun-status rayrun-status-${status}`;
-  statusBadge.textContent = status.toUpperCase();
-  header.appendChild(statusBadge);
-  
-  container.appendChild(header);
-
-  // Controls section
-  const controls = document.createElement("div");
-  controls.className = "rayrun-controls";
-
-  // GPU selection
-  if (status === "stopped" || status === "error") {
-    const gpuLabel = document.createElement("label");
-    gpuLabel.textContent = "Instance Type:";
-    controls.appendChild(gpuLabel);
-
-    const gpuSelect = document.createElement("select");
-    gpuSelect.className = "rayrun-select";
-    
-    const gpuOptions = [
-      { value: "gpu.a100", label: "NVIDIA A100 80GB" },
-      { value: "gpu.h100", label: "NVIDIA H100 80GB" },
-      { value: "gpu.rtx4090", label: "NVIDIA RTX 4090" },
-      { value: "gpu.a6000", label: "NVIDIA RTX A6000" },
-    ];
-    
-    gpuOptions.forEach(opt => {
-      const option = document.createElement("option");
-      option.value = opt.value;
-      option.textContent = opt.label;
-      option.selected = opt.value === selectedGpu;
-      gpuSelect.appendChild(option);
-    });
-    
-    gpuSelect.addEventListener("change", (e) => {
-      model.set("selected_gpu", e.target.value);
-      model.save_changes();
-    });
-    
-    controls.appendChild(gpuSelect);
-
-    // Idle timeout
-    const timeoutLabel = document.createElement("label");
-    timeoutLabel.textContent = "Idle Timeout (min):";
-    controls.appendChild(timeoutLabel);
-
-    const timeoutInput = document.createElement("input");
-    timeoutInput.type = "number";
-    timeoutInput.className = "rayrun-input";
-    timeoutInput.value = idleTimeout;
-    timeoutInput.min = 5;
-    timeoutInput.max = 120;
-    timeoutInput.addEventListener("change", (e) => {
-      model.set("idle_timeout_minutes", parseInt(e.target.value));
-      model.save_changes();
-    });
-    controls.appendChild(timeoutInput);
-  }
-
-  // Start/Stop button
-  const actionButton = document.createElement("button");
-  actionButton.className = "rayrun-button";
-  
-  if (status === "stopped" || status === "error") {
-    actionButton.textContent = "Start Compute";
-    actionButton.className += " rayrun-button-start";
-    actionButton.onclick = () => {
-      model.send({ action: "start" });
-    };
-  } else if (status === "starting") {
-    actionButton.textContent = "Starting...";
-    actionButton.disabled = true;
-  } else if (status === "stopping") {
-    actionButton.textContent = "Stopping...";
-    actionButton.disabled = true;
-  } else {
-    actionButton.textContent = "Stop Compute";
-    actionButton.className += " rayrun-button-stop";
-    actionButton.onclick = () => {
-      model.send({ action: "stop" });
-    };
-  }
-  
-  controls.appendChild(actionButton);
-  container.appendChild(controls);
-
-  // Info section
-  if (status === "running") {
-    const infoSection = document.createElement("div");
-    infoSection.className = "rayrun-info";
-
-    // Elapsed time
-    const timeDiv = document.createElement("div");
-    timeDiv.className = "rayrun-info-row";
-    const hours = Math.floor(elapsedSeconds / 3600);
-    const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-    const seconds = Math.floor(elapsedSeconds % 60);
-    timeDiv.innerHTML = `<span class="rayrun-label">Elapsed:</span> ${hours}h ${minutes}m ${seconds}s`;
-    infoSection.appendChild(timeDiv);
-
-    // Pod ID
-    if (podId) {
-      const podDiv = document.createElement("div");
-      podDiv.className = "rayrun-info-row";
-      podDiv.innerHTML = `<span class="rayrun-label">Pod ID:</span> ${podId}`;
-      infoSection.appendChild(podDiv);
-    }
-
-    // IP Address
-    if (ipAddress) {
-      const ipDiv = document.createElement("div");
-      ipDiv.className = "rayrun-info-row";
-      ipDiv.innerHTML = `<span class="rayrun-label">IP:</span> ${ipAddress}`;
-      infoSection.appendChild(ipDiv);
-    }
-
-    // Ray URL
-    if (rayUrl) {
-      const rayDiv = document.createElement("div");
-      rayDiv.className = "rayrun-info-row";
-      rayDiv.innerHTML = `<span class="rayrun-label">Ray Client:</span> <code>${rayUrl}</code>`;
-      infoSection.appendChild(rayDiv);
-    }
-
-    // Dashboard URL
-    if (dashboardUrl) {
-      const dashDiv = document.createElement("div");
-      dashDiv.className = "rayrun-info-row";
-      const dashLink = document.createElement("a");
-      dashLink.href = dashboardUrl;
-      dashLink.target = "_blank";
-      dashLink.textContent = "Open Ray Dashboard";
-      dashDiv.innerHTML = `<span class="rayrun-label">Dashboard:</span> `;
-      dashDiv.appendChild(dashLink);
-      infoSection.appendChild(dashDiv);
-    }
-
-    container.appendChild(infoSection);
-  }
-
-  // Error message
-  if (errorMessage) {
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "rayrun-error";
-    errorDiv.textContent = errorMessage;
-    container.appendChild(errorDiv);
-  }
-
-  // Update elapsed time
-  if (status === "running") {
-    const updateElapsed = () => {
-      elapsedSeconds = model.get("elapsed_seconds");
-      const timeDiv = container.querySelector(".rayrun-info-row");
-      if (timeDiv && timeDiv.innerHTML.includes("Elapsed")) {
-        const hours = Math.floor(elapsedSeconds / 3600);
-        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-        const seconds = Math.floor(elapsedSeconds % 60);
-        timeDiv.innerHTML = `<span class="rayrun-label">Elapsed:</span> ${hours}h ${minutes}m ${seconds}s`;
-      }
-      if (model.get("status") === "running") {
-        requestAnimationFrame(updateElapsed);
-      }
-    };
-    updateElapsed();
-  }
-
-  el.appendChild(container);
-
-  // Listen for model changes
-  model.on("change:status", () => {
-    render({ model, el });
-  });
-  model.on("change:elapsed_seconds", () => {
-    // Handled in updateElapsed
-  });
+function formatElapsed(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${h}h ${m}m ${s}s`;
 }
+
+function view(model) {
+  const status = model.get("status");
+  const podId = model.get("pod_id");
+  const ipAddress = model.get("ip_address");
+  const rayUrl = model.get("ray_url");
+  const dashboardUrl = model.get("dashboard_url");
+  const elapsedSeconds = model.get("elapsed_seconds");
+  const errorMessage = model.get("error_message");
+  const selectedTier = model.get("selected_tier");
+  const idleTimeout = model.get("idle_timeout_minutes");
+
+  const onStart = () => {
+    model.set("status", "starting");
+    model.save_changes();
+    model.send({ action: "start" });
+  };
+  const onStop = () => {
+    model.set("status", "stopping");
+    model.save_changes();
+    model.send({ action: "stop" });
+  };
+
+  const onTierChange = (e) => {
+    model.set("selected_tier", e.target.value);
+    model.save_changes();
+  };
+  const onTimeoutChange = (e) => {
+    const v = parseInt(e.target.value, 10);
+    model.set("idle_timeout_minutes", isNaN(v) ? idleTimeout : v);
+    model.save_changes();
+  };
+
+  const tierOptions = [
+    { value: "cheap", label: "Cheap (RTX 3070-5090, V100, T4, A30)" },
+    { value: "medium", label: "Medium (RTX A5000/A6000, L40, A40)" },
+    { value: "costly", label: "Costly (A100, H100, H200, B200, MI300X)" },
+  ];
+
+  return html`
+    <div class="rayrun-widget">
+      <div class="rayrun-header">
+        <h3>RayRun Compute</h3>
+        <span class=${`rayrun-status rayrun-status-${status}`}
+          >${status.toUpperCase()}</span
+        >
+      </div>
+
+      <div class="rayrun-controls">
+        ${status === "stopped" || status === "error"
+          ? html`
+              <label>GPU Tier:</label>
+              <select class="rayrun-select" onchange=${onTierChange}>
+                ${tierOptions.map(
+                  (opt) =>
+                    html`<option
+                      value=${opt.value}
+                      .selected=${opt.value === selectedTier}
+                    >
+                      ${opt.label}
+                    </option>`,
+                )}
+              </select>
+
+              <label>Idle Timeout (min):</label>
+              <input
+                type="number"
+                class="rayrun-input"
+                value=${idleTimeout}
+                min=${5}
+                max=${120}
+                onchange=${onTimeoutChange}
+              />
+            `
+          : null}
+        ${status === "fetching"
+          ? html`<div class="rayrun-info-row"><span class="rayrun-label">Status:</span> Checking for existing pods...</div>`
+          : null}
+        ${status === "fetching"
+          ? html`<button class="rayrun-button" disabled>Fetching pods...</button>`
+          : status === "stopped" || status === "error"
+            ? html`<button
+                class="rayrun-button rayrun-button-start"
+                onclick=${onStart}
+              >
+                Start Compute
+              </button>`
+            : status === "starting"
+              ? html`<button class="rayrun-button" disabled>Starting...</button>`
+              : status === "stopping"
+                ? html`<button class="rayrun-button" disabled>
+                    Stopping...
+                  </button>`
+                : html`<button
+                    class="rayrun-button rayrun-button-stop"
+                    onclick=${onStop}
+                  >
+                    Stop Compute
+                  </button>`}
+      </div>
+
+      ${status === "running"
+        ? html`
+            <div class="rayrun-info">
+              <div class="rayrun-info-row">
+                <span class="rayrun-label">Elapsed:</span> ${formatElapsed(
+                  elapsedSeconds,
+                )}
+              </div>
+              ${podId
+                ? html`<div class="rayrun-info-row">
+                    <span class="rayrun-label">Pod ID:</span> ${podId}
+                  </div>`
+                : null}
+              ${ipAddress
+                ? html`<div class="rayrun-info-row">
+                    <span class="rayrun-label">IP:</span> ${ipAddress}
+                  </div>`
+                : null}
+              ${rayUrl
+                ? html`<div class="rayrun-info-row">
+                    <span class="rayrun-label">Ray Client:</span>
+                    <code>${rayUrl}</code>
+                  </div>`
+                : null}
+              ${dashboardUrl
+                ? html`<div class="rayrun-info-row">
+                    <span class="rayrun-label">Dashboard:</span>
+                    <a href=${dashboardUrl} target="_blank"
+                      >Open Ray Dashboard</a
+                    >
+                  </div>`
+                : null}
+            </div>
+          `
+        : null}
+      ${errorMessage
+        ? html`<div class="rayrun-error">${errorMessage}</div>`
+        : null}
+    </div>
+  `;
+}
+
+function render({ model, el }) {
+  // Install listeners once to avoid duplication
+  if (!el.__rayrunInit) {
+    const onChange = () => uRender(el, view(model));
+    el.__onChange = onChange;
+    model.on("change:status", onChange);
+    model.on("change:elapsed_seconds", onChange);
+    model.on("change:error_message", onChange);
+    model.on("change:selected_tier", onChange);
+    el.__rayrunInit = true;
+  }
+
+  uRender(el, view(model));
+}
+
+export default { render };

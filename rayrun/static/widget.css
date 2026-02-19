@@ -58,6 +58,11 @@
   color: #721c24;
 }
 
+.rayrun-status-fetching {
+  background: #e1f5fe;
+  color: #0277bd;
+}
+
 .rayrun-controls {
   display: flex;
   flex-direction: column;

@@ -1,10 +1,11 @@
 """Monitor Ray activity and shutdown pod when idle."""
 
+import logging
 import os
 import time
-import logging
-import requests
 from datetime import datetime, timezone
+
+import requests
 
 # Configure logging
 logging.basicConfig(
@@ -17,7 +18,7 @@ IDLE_TIMEOUT_MINUTES = int(os.getenv("IDLE_TIMEOUT_MINUTES", 30))
 MAX_RUNTIME_HOURS = int(os.getenv("MAX_RUNTIME_HOURS", 6))
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
 POD_ID = os.getenv("RUNPOD_POD_ID")
-RAY_DASHBOARD_URL = os.getenv("RAY_DASHBOARD_URL", "http://localhost:8265")
+RAY_DASHBOARD_URL = os.getenv("RAY_DASHBOARD_URL", "http://0.0.0.0:8265")
 CHECK_INTERVAL_SECONDS = 60  # Check every minute
 
 

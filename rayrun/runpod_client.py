@@ -1,40 +1,15 @@
-"""RunPod API client for RayRun."""
+"""Async RunPod API client for RayRun using aiohttp."""
 
-import os
-import time
-import requests
+import asyncio
 from typing import Optional
+
+import aiohttp
 
 BASE_URL = "https://rest.runpod.io/v1"
 
-GPU_TYPES = {
-    "gpu.a100": "NVIDIA A100 80GB PCIe",
-    "gpu.a100-80gb-sxm": "NVIDIA A100 80GB SXM",
-    "gpu.a100-40gb": "NVIDIA A100 40GB PCIe",
-    "gpu.a6000": "NVIDIA RTX A6000",
-    "gpu.v100": "NVIDIA V100",
-    "gpu.h100": "NVIDIA H100 80GB SXM",
-    "gpu.h100-pcie": "NVIDIA H100 80GB PCIe",
-    "gpu.rtx4090": "NVIDIA RTX 4090",
-    "gpu.rtx3090": "NVIDIA RTX 3090",
-    "gpu.l40s": "NVIDIA L40S",
-}
-
-CPU_FLAVORS = {
-    "cpu1c": "1 vCPU, 2GB RAM",
-    "cpu2c": "2 vCPU, 4GB RAM",
-    "cpu3c": "2 vCPU, 6GB RAM",
-    "cpu4c": "4 vCPU, 8GB RAM",
-    "cpu6c": "6 vCPU, 12GB RAM",
-    "cpu8c": "8 vCPU, 16GB RAM",
-    "cpu12c": "12 vCPU, 24GB RAM",
-    "cpu16c": "16 vCPU, 32GB RAM",
-    "cpu24c": "24 vCPU, 48GB RAM",
-}
-
 
 class RunPodClient:
-    """Client for RunPod API."""
+    """Async client for RunPod API."""
 
     def __init__(self, api_key: str):
         """Initialize the client.
@@ -49,7 +24,7 @@ class RunPodClient:
             "Content-Type": "application/json",
         }
 
-    def create_pod(
+    async def create_pod(
         self,
         name: str,
         image: str,
@@ -106,20 +81,20 @@ class RunPodClient:
         if ports:
             payload["ports"] = ports
 
-        response = requests.post(
-            f"{self.base_url}/pods",
-            headers=self.headers,
-            json=payload,
-        )
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.post(
+                f"{self.base_url}/pods",
+                json=payload,
+            ) as response:
+                if response.status == 201:
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f"Failed to create pod: {response.status} - {text}"
+                    )
 
-        if response.status_code == 201:
-            return response.json()
-        else:
-            raise RuntimeError(
-                f"Failed to create pod: {response.status_code} - {response.text}"
-            )
-
-    def get_pod(self, pod_id: str) -> dict:
+    async def get_pod(self, pod_id: str) -> dict:
         """Get pod status.
 
         Args:
@@ -131,19 +106,15 @@ class RunPodClient:
         Raises:
             RuntimeError: If request fails
         """
-        response = requests.get(
-            f"{self.base_url}/pods/{pod_id}",
-            headers=self.headers,
-        )
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.get(f"{self.base_url}/pods/{pod_id}") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    raise RuntimeError(f"Failed to get pod: {response.status} - {text}")
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise RuntimeError(
-                f"Failed to get pod: {response.status_code} - {response.text}"
-            )
-
-    def delete_pod(self, pod_id: str) -> bool:
+    async def delete_pod(self, pod_id: str) -> bool:
         """Delete a pod.
 
         Args:
@@ -155,58 +126,17 @@ class RunPodClient:
         Raises:
             RuntimeError: If deletion fails
         """
-        response = requests.delete(
-            f"{self.base_url}/pods/{pod_id}",
-            headers=self.headers,
-        )
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.delete(f"{self.base_url}/pods/{pod_id}") as response:
+                if response.status == 204:
+                    return True
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f"Failed to delete pod: {response.status} - {text}"
+                    )
 
-        if response.status_code == 204:
-            return True
-        else:
-            raise RuntimeError(
-                f"Failed to delete pod: {response.status_code} - {response.text}"
-            )
-
-    def wait_for_ready(
-        self, pod_id: str, timeout: int = 300, interval: int = 5
-    ) -> dict:
-        """Poll until pod is running and has an IP address.
-
-        Args:
-            pod_id: Pod ID
-            timeout: Maximum time to wait in seconds
-            interval: Polling interval in seconds
-
-        Returns:
-            Pod data when ready
-
-        Raises:
-            TimeoutError: If pod doesn't become ready in time
-            RuntimeError: If API request fails
-        """
-        start_time = time.time()
-
-        while time.time() - start_time < timeout:
-            try:
-                pod = self.get_pod(pod_id)
-
-                # Check if pod is running and has an IP
-                if pod.get("desiredStatus") == "RUNNING":
-                    # Check if it has a public IP
-                    public_ip = pod.get("publicIp")
-                    if public_ip:
-                        return pod
-
-                time.sleep(interval)
-            except Exception:
-                # Pod might not exist yet, keep polling
-                time.sleep(interval)
-
-        raise TimeoutError(
-            f"Pod {pod_id} did not become ready within {timeout} seconds"
-        )
-
-    def list_pods(self) -> list:
+    async def list_pods(self) -> list:
         """List all pods.
 
         Returns:
@@ -215,14 +145,56 @@ class RunPodClient:
         Raises:
             RuntimeError: If request fails
         """
-        response = requests.get(
-            f"{self.base_url}/pods",
-            headers=self.headers,
-        )
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.get(f"{self.base_url}/pods") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f"Failed to list pods: {response.status} - {text}"
+                    )
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise RuntimeError(
-                f"Failed to list pods: {response.status_code} - {response.text}"
-            )
+    async def start_pod(self, pod_id: str) -> dict:
+        """Start a stopped pod.
+
+        Args:
+            pod_id: Pod ID
+
+        Returns:
+            Pod data with updated status
+
+        Raises:
+            RuntimeError: If start fails
+        """
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.post(f"{self.base_url}/pods/{pod_id}/start") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f"Failed to start pod: {response.status} - {text}"
+                    )
+
+    async def stop_pod(self, pod_id: str) -> dict:
+        """Stop a started pod
+
+        Args:
+            pod_id: Pod ID
+
+        Returns:
+            Pod data with updated status
+
+        Raises:
+            RuntimeError: If stop fails
+        """
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.post(f"{self.base_url}/pods/{pod_id}/stop") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f"Failed to stop pod: {response.status} - {text}"
+                    )
