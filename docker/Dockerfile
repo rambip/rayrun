@@ -1,4 +1,4 @@
-FROM rayproject/ray:2.54.0-py313-gpu
+FROM rayproject/ray:2.54.0-py312-gpu
 
 USER root
 
